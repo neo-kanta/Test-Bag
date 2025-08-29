@@ -1,0 +1,16 @@
+[ProjectGroup]
+Version=1.0
+[Project1]
+ProjectPath=PCB_Project.PrjPcb
+[Project2]
+ProjectPath=..\Stylish PCB\SUNNYMultiAnalyzorVersion3\Stylish.PrjPcb
+[Project3]
+ProjectPath=..\PCB V3\ESP32_ATMEL\ESP32_ATMEL.PrjPcb
+[Project4]
+ProjectPath=..\..\..\Users\User\Desktop\SAM34\LoRa_EE\Rak_V0.1\MCU_Rak_V0.1.PrjPcb
+[Project5]
+ProjectPath=..\..\..\Users\User\Downloads\TSW-106-19-T-S\TSW-106-19-T-S.LibPkg
+[Project6]
+ProjectPath=..\..\..\Users\User\Downloads\HTSW-104-21-F-S\HTSW-104-21-F-S.LibPkg
+[Project7]
+ProjectPath=..\..\..\Users\User\Desktop\SAM34\LoRa_EE\LoRa_Exit_Sign\LoRa_Exit_Sign.PrjPcb

@@ -1,0 +1,17 @@
+src/.vs/
+src/TESTBAG/bin/
+src/TESTBAG/obj/
+ZedGraph Example/ZedGraph Real-time Simulation/.vs/
+ZedGraph Example/ZedGraph Real-time Simulation/ZedGraph Real-time Simulation/obj/
+ZedGraph Example/ZedGraph Real-time Simulation/ZedGraph Real-time Simulation/bin/
+ESP32/WiFiData/.gitignore
+ESP32/WiFiData/platformio.ini
+ESP32/WiFiData/.vscode/extensions.json
+ESP32/WiFiData/include/README
+ESP32/WiFiData/lib/README
+ESP32/WiFiData/src/main.cpp
+ESP32/WiFiData/test/README
+ESP32/WiFiData/include/README.txt
+PCB/History
+PCB/PCB2.$$$
+PCB/__Previews/TESTBAG.SchDocPreview

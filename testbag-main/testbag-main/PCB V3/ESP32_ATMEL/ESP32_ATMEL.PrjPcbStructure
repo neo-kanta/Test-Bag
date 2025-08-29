@@ -1,0 +1,4 @@
+Record=TopLevelDocument|FileName=ChargingSystem_LowVoltageCutOff.SchDoc|SheetNumber=4
+Record=NoMainPathDocument|SourceDocument=ChargingSystem_LowVoltageCutOff.SchDoc|FileName=CheckingSystem.SchDoc|SheetNumber=3
+Record=NoMainPathDocument|SourceDocument=ChargingSystem_LowVoltageCutOff.SchDoc|FileName=microcontroller.SchDoc|SheetNumber=1
+Record=NoMainPathDocument|SourceDocument=ChargingSystem_LowVoltageCutOff.SchDoc|FileName=PowerSupply.SchDoc|SheetNumber=2

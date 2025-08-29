@@ -1,0 +1,10 @@
+Output: EDIF for PCB
+Type  : EDIF
+From  : Project [PCB_Project.PrjPcb]
+   Generated File[PCB_Project.EDF]
+
+
+Files Generated   : 1
+Documents Printed : 0
+
+Finished Output Generation At 16:09:44 On 13/7/2023

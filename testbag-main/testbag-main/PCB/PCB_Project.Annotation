@@ -1,0 +1,13 @@
+[DesignatorManager]
+
+[SheetNumberManager]
+SheetNumberOrder=Display Order
+SheetNumberMethod=Increasing
+DocumentName0=SUNNYMultiAnalyzor.SchDoc
+UniqueIDPath0=
+SheetNumber0=1
+DocumentName1=TESTBAG.SchDoc
+UniqueIDPath1=
+SheetNumber1=1
+
+

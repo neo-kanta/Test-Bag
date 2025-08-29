@@ -416,3 +416,5 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+testbag-main/testbag-main/ArduinoAC/.vscode
+testbag-main/testbag-main/ESP32/ESPWIFI/.vscode

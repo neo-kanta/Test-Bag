@@ -1,0 +1,408 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B8C8525D-689A-48BC-B650-CE499D8616BC}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>TESTBAG</RootNamespace>
+    <AssemblyName>TESTBAG</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <LangVersion>11</LangVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <PublishUrl>C:\Users\User\Downloads\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <TargetCulture>en</TargetCulture>
+    <ProductName>Product Quality Test</ProductName>
+    <PublisherName>IsOn Import-Export Co. Ltd</PublisherName>
+    <AutorunEnabled>true</AutorunEnabled>
+    <ApplicationRevision>35</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>false</DelaySign>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>11</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>11</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>56CAF6E7B4CC56EA9225AAF42BF72F013EB381DB</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>TESTBAG_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>TESTBAG.Program</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup>
+    <TargetZone>LocalIntranet</TargetZone>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="MySql.Data">
+      <HintPath>..\..\..\..\..\..\IsOn\mcu_setting_2022\src\Sunny MCU Setting 2022\DB Management\bin\Debug\MySql.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Calculation.cs" />
+    <Compile Include="ProductQuality\AlternativeCurrentDescription.cs" />
+    <Compile Include="ProductQuality\AlternativeCurrentState.cs" />
+    <Compile Include="ProductQuality\BatteryMeasurementMode.cs" />
+    <Compile Include="ProductQuality\BatteryMeasurementModeDescription.cs" />
+    <Compile Include="ProductQuality\QCBattery.cs" />
+    <Compile Include="ProductQuality\QCChargingSystem.cs" />
+    <Compile Include="ProductQuality\ChargingSystemDescriptions.cs" />
+    <Compile Include="ProductQuality\ChargingSystem.cs" />
+    <Compile Include="ProductQuality\QCLowVoltageCutOffCheck.cs" />
+    <Compile Include="ProductQuality\QualityDescription.cs" />
+    <Compile Include="ProductQuality\ChargingState.cs" />
+    <Compile Include="ProductQuality\ChargingStageDescriptions.cs" />
+    <Compile Include="ProductQuality\QuailityCheck.cs" />
+    <Compile Include="Data Management\Data Classes\NevigateSpecification.cs" />
+    <Compile Include="Data Management\Data Classes\SaveData.cs" />
+    <Compile Include="Data Management\Database\DataSunny.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataSunny.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\DataSunny.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataSunny.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\DataSunny.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>DataSunny.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\MASTER_SPECIFICATIONS.cs">
+      <DependentUpon>DataSunny.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\MEASUREMENT_PRODUCT.cs">
+      <DependentUpon>DataSunny.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\PRODUCT.cs">
+      <DependentUpon>DataSunny.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\RAW_MEASUREMENT.cs">
+      <DependentUpon>DataSunny.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\sp_helpdiagramdefinition_Result.cs">
+      <DependentUpon>DataSunny.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\sp_helpdiagrams_Result.cs">
+      <DependentUpon>DataSunny.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Database\sysdiagrams.cs">
+      <DependentUpon>DataSunny.tt</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Edit\mdiEdiSpecifications.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Data Management\Edit\mdiEdiSpecifications.Designer.cs">
+      <DependentUpon>mdiEdiSpecifications.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Data Classes\InteractiveText.cs" />
+    <Compile Include="Data Management\frmDataManage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Data Management\frmDataManage.Designer.cs">
+      <DependentUpon>frmDataManage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Edit\mdiEditProduct.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Data Management\Edit\mdiEditProduct.Designer.cs">
+      <DependentUpon>mdiEditProduct.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Add\mdiProduct.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Data Management\Add\mdiProduct.Designer.cs">
+      <DependentUpon>mdiProduct.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Add\mdiSpecifications.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Data Management\Add\mdiSpecifications.Designer.cs">
+      <DependentUpon>mdiSpecifications.cs</DependentUpon>
+    </Compile>
+    <Compile Include="frmMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmMain.Designer.cs">
+      <DependentUpon>frmMain.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Data Management\Data Classes\NevigateProduct.cs" />
+    <Compile Include="ConfigurationSettings.cs" />
+    <Compile Include="LoadingScreen.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="LoadingScreen.Designer.cs">
+      <DependentUpon>LoadingScreen.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Log\RegistryManager.cs" />
+    <Compile Include="Log\UdpLog.cs" />
+    <Compile Include="CsvFile.cs" />
+    <Compile Include="ProductQuality\CheckQualityStatus.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Protocol\Board.cs" />
+    <Compile Include="Protocol\Calibration.cs" />
+    <Compile Include="Protocol\IHttpWiFiClient.cs" />
+    <Compile Include="Protocol\IUdpWiFiClient.cs" />
+    <Compile Include="Protocol\Protocol.cs" />
+    <Compile Include="Protocol\ConnectionStatus.cs" />
+    <Compile Include="Protocol\ConnectionStatusEventArgs.cs" />
+    <Compile Include="Protocol\DataPattern.cs" />
+    <Compile Include="Log\Logger.cs" />
+    <Compile Include="Protocol\DeviceInfo.cs" />
+    <Compile Include="Protocol\HttpWiFiClient.cs" />
+    <Compile Include="Protocol\ArduinoSerialConnection.cs" />
+    <Compile Include="Protocol\UdpWiFiClient.cs" />
+    <Compile Include="Zed\CurveConfiguration.cs" />
+    <Compile Include="Zed\CurveConfigurationFactory.cs" />
+    <Compile Include="Zed\CurveType.cs" />
+    <Compile Include="Zed\CurveTypeConfiguration.cs" />
+    <Compile Include="Zed\IZedGraphManager.cs" />
+    <Compile Include="Zed\PointPairType.cs" />
+    <Compile Include="Zed\ZedGraphManager.cs" />
+    <EmbeddedResource Include="Data Management\frmDataManage.resx">
+      <DependentUpon>frmDataManage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Data Management\Edit\mdiEdiSpecifications.resx">
+      <DependentUpon>mdiEdiSpecifications.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Data Management\Edit\mdiEditProduct.resx">
+      <DependentUpon>mdiEditProduct.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Data Management\Add\mdiProduct.resx">
+      <DependentUpon>mdiProduct.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Data Management\Add\mdiSpecifications.resx">
+      <DependentUpon>mdiSpecifications.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="frmMain.resx">
+      <DependentUpon>frmMain.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LoadingScreen.resx">
+      <DependentUpon>LoadingScreen.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EntityDeploy Include="Data Management\Database\DataSunny.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>DataSunny.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <None Include="..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
+    <None Include="Data Management\Database\backTaiyo" />
+    <None Include="Data Management\Database\DataSunny.edmx.diagram">
+      <DependentUpon>DataSunny.edmx</DependentUpon>
+    </None>
+    <None Include="Properties\app.manifest" />
+    <None Include="Properties\DataSources\frmMain.datasource" />
+    <None Include="Properties\DataSources\NevigateProduct.datasource" />
+    <None Include="Properties\DataSources\Program.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Data_Management.Database.MASTER_SPECIFICATIONS.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Data_Management.Database.MEASUREMENT_PRODUCT.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Data_Management.Database.PRODUCT.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Data_Management.Database.RAW_MEASUREMENT.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Data_Management.Database.sp_helpdiagramdefinition_Result.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Data_Management.Database.sp_helpdiagrams_Result.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Data_Management.Database.sysdiagrams.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Data_Management.frmDataManage.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Properties.Resources.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Properties.Settings.datasource" />
+    <None Include="Properties\DataSources\TESTBAG.Zed.ChartProperties.datasource" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <None Include="TESTBAG_TemporaryKey.pfx" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="EntityFramework">
+      <Version>6.4.4</Version>
+    </PackageReference>
+    <PackageReference Include="EPPlus">
+      <Version>6.2.0</Version>
+    </PackageReference>
+    <PackageReference Include="FontAwesome.Sharp">
+      <Version>6.3.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts">
+      <Version>10.0.22621.755</Version>
+    </PackageReference>
+    <PackageReference Include="NPOI">
+      <Version>2.6.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Buffers">
+      <Version>4.5.1</Version>
+    </PackageReference>
+    <PackageReference Include="System.Drawing.Common">
+      <Version>7.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Memory">
+      <Version>4.5.5</Version>
+    </PackageReference>
+    <PackageReference Include="System.Net.Http">
+      <Version>4.3.4</Version>
+    </PackageReference>
+    <PackageReference Include="System.Numerics.Vectors">
+      <Version>4.5.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe">
+      <Version>6.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation">
+      <Version>4.3.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Text.Encoding.CodePages">
+      <Version>7.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.ValueTuple">
+      <Version>4.5.0</Version>
+    </PackageReference>
+    <PackageReference Include="ZedGraph">
+      <Version>5.1.7</Version>
+    </PackageReference>
+    <PackageReference Include="Zeroconf">
+      <Version>3.6.11</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Data Management\Database\DataSunny.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>DataSunny.edmx</DependentUpon>
+      <LastGenOutput>DataSunny.Context.cs</LastGenOutput>
+    </Content>
+    <Content Include="Data Management\Database\DataSunny.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>DataSunny.edmx</DependentUpon>
+      <LastGenOutput>DataSunny.cs</LastGenOutput>
+    </Content>
+    <Content Include="Data Management\Database\Taiyo.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
