@@ -1,241 +1,231 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <string.h>
-#include <HardwareSerial.h>
 #include <PZEM004Tv30.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncTCP.h>
 #include <ESPmDNS.h>
 
-#define LED_PIN 2
-#define RELAY_PIN 25
-#define VOLTAGE_SENSOR_PIN 32
-#define CURRENT_SENSOR_PIN 35
-#define PZEM_RX_PIN 16
-#define PZEM_TX_PIN 17
-#define PZEM_SERIAL Serial2
+namespace {
+constexpr uint8_t kLedPin = 2;
+constexpr uint8_t kRelayPin = 25;
+constexpr uint8_t kVoltageSensorPin = 32;
+constexpr uint8_t kCurrentSensorPin = 35;
+constexpr uint8_t kPzemRxPin = 16;
+constexpr uint8_t kPzemTxPin = 17;
 
-#if defined(ESP32)    
-PZEM004Tv30 pzem(PZEM_SERIAL, PZEM_RX_PIN, PZEM_TX_PIN);
+constexpr uint16_t kUdpPort = 8080;
+constexpr uint16_t kHttpPort = 80;
+constexpr uint32_t kSendDelayMs = 10;
+constexpr uint32_t kMdnsCheckIntervalMs = 10000;
+
+constexpr const char* kHotspotSsid = "SunnySSID";
+constexpr const char* kHotspotPassword = "admin123";
+constexpr const char* kMdnsHost = "esp32";
+
+constexpr size_t kBufferSize = 100;
+
+unsigned long gLastMdnsCheckMs = 0;
+IPAddress gUdpTargetIp;
+char gBufferData[kBufferSize] = "ESP32";
+
+AsyncWebServer gServer(kHttpPort);
+WiFiUDP gUdp;
+
+#if defined(ESP32)
+PZEM004Tv30 gPzem(Serial2, kPzemRxPin, kPzemTxPin);
 #else
-PZEM004Tv30 pzem(Serial2);
+PZEM004Tv30 gPzem(Serial2);
 #endif
 
-const int UDP_PORT = 8080;
-IPAddress udpTargetIP;
+TaskHandle_t gUdpTask = nullptr;
+TaskHandle_t gMdnsTask = nullptr;
 
-const int HTTP_PORT = 80;
-const int sendDelayMs = 10; // Adjust this value to change the sending rate
-const char * HOTSPOT_SSID = "SunnySSID"; // => HOTSPOT
-const char * HOTSPOT_PASSWORD = "admin123"; // => HOTSPOT
-const char * SERVICE_TYPE = "_http";
-const int READING_SPEED = 50;
-const int START_DELAY_MS = 100;
+void connectToWiFi(const char* ssid, const char* password) {
+  WiFi.begin(ssid, password);
 
-unsigned long LAST_CONNECTION_CHECK = 0 ; 
-unsigned long CONNECTION_CHECK_INTERVAL_MS = 10000;
+  while (WiFi.status() != WL_CONNECTED) {
+    digitalWrite(kLedPin, HIGH);
+    Serial.println(".");
+    digitalWrite(kLedPin, LOW);
+    delay(300);
+  }
 
-AsyncWebServer server(HTTP_PORT);
-WiFiUDP udp;
-#define nBuffer 100
-char bufferData[nBuffer] = "ESP32";
-
-char voltageStringPzem[10];
-char currentStringPzem[10];   
-
-
-void connectToWiFi(const char *ssid, const char *password) {
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) 
-    {
-        digitalWrite(LED_PIN, HIGH);
-        Serial.println(".\n");
-        digitalWrite(LED_PIN, LOW);
-    }
-    Serial.print("Connected to : ");
-    Serial.println(WiFi.SSID());
-    Serial.println("IP Address : ");
-    Serial.println(WiFi.localIP());
-    udp.begin(UDP_PORT);
+  Serial.print("Connected to: ");
+  Serial.println(WiFi.SSID());
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+  gUdp.begin(kUdpPort);
 }
 
-void handleWifiConfig(AsyncWebServerRequest *request) {
-    String ssid = request->arg("ssid");
-    String password = request->arg("password");
-
-    request->send(200, "text/plain", "Wi-Fi credentials received.");
-    Serial.println("Received Wi-Fi credentials:");
-    Serial.print("SSID: ");
-    Serial.println(ssid);
-    Serial.print("Password: ");
-    Serial.println(password);
-
-    connectToWiFi(HOTSPOT_SSID, HOTSPOT_PASSWORD);
+String getConnectionStatus() {
+  return WiFi.status() == WL_CONNECTED ? "connected" : "disconnected";
 }
 
-void handleCheckWifiConnection(AsyncWebServerRequest *request) {
-    if (WiFi.status() == WL_CONNECTED) {
-        request->send(200, "text/plain", "connected");
-    } else {
-        request->send(200, "text/plain", "disconnected");
-    }
+String readPinStatus() {
+  const String ledStatus = digitalRead(kLedPin) ? "1" : "0";
+  const String relayStatus = digitalRead(kRelayPin) ? "1" : "0";
+  return "LED:" + ledStatus + ",RELAY:" + relayStatus;
 }
 
-void handleChangeIP(AsyncWebServerRequest *request) {
-    String ipAddress = request->arg("ip");
-    Serial.print("IP:" + String(ipAddress));
-
-    IPAddress ip;
-    if (ip.fromString(ipAddress)) {
-        udpTargetIP = ip;
-        //WiFi.config(ip, WiFi.gatewayIP(), WiFi.subnetMask());
-        request->send(200, "text/plain", "IP address changed to: " + ipAddress);
-        Serial.println("###################### IP address changed to: " + ipAddress);
-    } else {
-        request->send(400, "text/plain", "Invalid IP address format.");
-        Serial.println("Invalid IP address format.");
-    }
-}
-void handlePinStatus(AsyncWebServerRequest *request) {
-    String ledStatus = digitalRead(LED_PIN) ? "1" : "0";
-    String relayStatus = digitalRead(RELAY_PIN) ? "1" : "0";
-
-    String pinStatus = "LED:" + ledStatus + ",RELAY:" + relayStatus;
-    request->send(200, "text/plain", pinStatus);
+String readAllStatus() {
+  const String wifiStatus = WiFi.status() == WL_CONNECTED ? "1" : "0";
+  const String ledStatus = digitalRead(kLedPin) ? "1" : "0";
+  const String relayStatus = digitalRead(kRelayPin) ? "1" : "0";
+  return "CONNECTION:" + wifiStatus + ",LED:" + ledStatus + ",RELAY:" + relayStatus;
 }
 
-void handleToggleLed(AsyncWebServerRequest *request) {
-    digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-    String ledState = digitalRead(LED_PIN) ? "ON" : "OFF";
-    request->send(200, "text/plain", ledState);
+void handleWifiConfig(AsyncWebServerRequest* request) {
+  const String ssid = request->arg("ssid");
+  const String password = request->arg("password");
+
+  request->send(200, "text/plain", "Wi-Fi credentials received.");
+  Serial.println("Received Wi-Fi credentials:");
+  Serial.print("SSID: ");
+  Serial.println(ssid);
+  Serial.print("Password: ");
+  Serial.println(password);
+
+  // Keep legacy behavior: connect to hard-coded hotspot.
+  connectToWiFi(kHotspotSsid, kHotspotPassword);
 }
 
-void handleToggleRelay(AsyncWebServerRequest *request) {
-    digitalWrite(RELAY_PIN, !digitalRead(RELAY_PIN));
-    String relayState = digitalRead(RELAY_PIN) ? "ON" : "OFF";
-    request->send(200, "text/plain", relayState);
+void handleCheckWifiConnection(AsyncWebServerRequest* request) {
+  request->send(200, "text/plain", getConnectionStatus());
 }
-void checkALlStatus(AsyncWebServerRequest *request){
-    String wifiStatus ;
-    if (WiFi.status() == WL_CONNECTED) {
-        wifiStatus = "1";
-    } else {
-        wifiStatus = "0";
-    }
-    String ledStatus = digitalRead(LED_PIN) ? "1" : "0";
-    String relayStatus = digitalRead(RELAY_PIN) ? "1" : "0";
-    String entireStatus = "CONNECTION:" + wifiStatus + ",LED:" + ledStatus + ",RELAY:" + relayStatus;
-    request->send(200, "text/plain", entireStatus);
+
+void handleChangeUdpTargetIp(AsyncWebServerRequest* request) {
+  const String ipAddress = request->arg("ip");
+  IPAddress parsedIp;
+
+  if (!parsedIp.fromString(ipAddress)) {
+    request->send(400, "text/plain", "Invalid IP address format.");
+    Serial.println("Invalid IP address format.");
+    return;
+  }
+
+  gUdpTargetIp = parsedIp;
+  request->send(200, "text/plain", "IP address changed to: " + ipAddress);
+  Serial.println("UDP target IP changed to: " + ipAddress);
 }
+
+void handlePinStatus(AsyncWebServerRequest* request) {
+  request->send(200, "text/plain", readPinStatus());
+}
+
+void handleToggleLed(AsyncWebServerRequest* request) {
+  digitalWrite(kLedPin, !digitalRead(kLedPin));
+  request->send(200, "text/plain", digitalRead(kLedPin) ? "ON" : "OFF");
+}
+
+void handleToggleRelay(AsyncWebServerRequest* request) {
+  digitalWrite(kRelayPin, !digitalRead(kRelayPin));
+  request->send(200, "text/plain", digitalRead(kRelayPin) ? "ON" : "OFF");
+}
+
+void handleCheckAllStatus(AsyncWebServerRequest* request) {
+  request->send(200, "text/plain", readAllStatus());
+}
+
 void setupHttpServer() {
-    server.on("/setwifi", HTTP_POST, [](AsyncWebServerRequest *request) { handleWifiConfig(request); });
-    server.on("/checkwifi", HTTP_GET, [](AsyncWebServerRequest *request) { handleCheckWifiConnection(request); });
-    server.on("/toggleled", HTTP_GET, [](AsyncWebServerRequest *request) { handleToggleLed(request); });
-    server.on("/togglerelay", HTTP_GET, [](AsyncWebServerRequest *request) { handleToggleRelay(request); });
-    server.on("/setudptarget", HTTP_POST, [](AsyncWebServerRequest *request) { handleChangeIP(request); });
-    server.on("/pinstatus", HTTP_GET, [](AsyncWebServerRequest *request) { handlePinStatus(request); });
-    server.on("/checkallstatus",HTTP_GET ,[](AsyncWebServerRequest *request){ checkALlStatus(request); });
-    server.begin();
+  gServer.on("/setwifi", HTTP_POST, handleWifiConfig);
+  gServer.on("/checkwifi", HTTP_GET, handleCheckWifiConnection);
+  gServer.on("/toggleled", HTTP_GET, handleToggleLed);
+  gServer.on("/togglerelay", HTTP_GET, handleToggleRelay);
+  gServer.on("/setudptarget", HTTP_POST, handleChangeUdpTargetIp);
+  gServer.on("/pinstatus", HTTP_GET, handlePinStatus);
+  gServer.on("/checkallstatus", HTTP_GET, handleCheckAllStatus);
+  gServer.begin();
 }
 
-void setupPin() {
-    pinMode(LED_PIN, OUTPUT);
-    digitalWrite(LED_PIN, LOW);
-    pinMode(RELAY_PIN,OUTPUT);
-    digitalWrite(RELAY_PIN,LOW);
-    pinMode(VOLTAGE_SENSOR_PIN,INPUT);
-    pinMode(CURRENT_SENSOR_PIN,INPUT);
+void setupPins() {
+  pinMode(kLedPin, OUTPUT);
+  digitalWrite(kLedPin, LOW);
+
+  pinMode(kRelayPin, OUTPUT);
+  digitalWrite(kRelayPin, LOW);
+
+  pinMode(kVoltageSensorPin, INPUT);
+  pinMode(kCurrentSensorPin, INPUT);
 }
 
+void updateMdns() {
+  if (WiFi.status() != WL_CONNECTED) {
+    MDNS.end();
+    return;
+  }
 
+  if (!MDNS.begin(kMdnsHost)) {
+    Serial.println("Error setting up mDNS responder!");
+    return;
+  }
 
-void updateMDNS() {
-    if (WiFi.status() == WL_CONNECTED) {
-        if (!MDNS.begin("esp32")) {
-            Serial.println("Error setting up mDNS responder!");
-        } else {
-            Serial.println("mDNS responder started");
-        }
-    } else {
-        MDNS.end();
-    }
-}
-void dtostrf_fast(float number, uint8_t fracDigits, char *buffer) {
-  int32_t wholePart = (int32_t)number;
-  uint32_t fractPart = (uint32_t)((number - wholePart) * pow(10, fracDigits));
-  sprintf(buffer, "%d.%u", wholePart, fractPart);
-}
-void readAndFormatData(char *buffer, size_t bufferSize) {
-    int currentReading = analogRead(CURRENT_SENSOR_PIN);
-    int voltageReading = analogRead(VOLTAGE_SENSOR_PIN);
-    
-    float voltagePzem = pzem.voltage();
-    float currentPzem = pzem.current();
-
-    Serial.println(String(voltagePzem));
-    Serial.println(String(currentPzem));
-
-    if (isnan(voltagePzem)) {
-        voltagePzem = 0;
-    }
-    if (isnan(currentPzem)) {
-        currentPzem = 0;
-    }
-
-    char voltagePzemString[7];
-    char currentPzemString[7];
-
-  dtostrf_fast(voltagePzem, 2, voltagePzemString);
-  dtostrf_fast(currentPzem, 2, currentPzemString);
-
-  snprintf(buffer, bufferSize, "DC%dA|DC%dV|AC%sA|AC%sV",
-           currentReading, voltageReading, currentPzemString, voltagePzemString);
+  Serial.println("mDNS responder started");
 }
 
-TaskHandle_t udpTask;
-TaskHandle_t mdnsTask;
+void readAndFormatData(char* buffer, size_t bufferSize) {
+  const int currentReading = analogRead(kCurrentSensorPin);
+  const int voltageReading = analogRead(kVoltageSensorPin);
 
-void udpSendDataTask(void * parameter) {
+  float voltagePzem = gPzem.voltage();
+  float currentPzem = gPzem.current();
 
+  if (isnan(voltagePzem)) {
+    voltagePzem = 0.0f;
+  }
+  if (isnan(currentPzem)) {
+    currentPzem = 0.0f;
+  }
+
+  snprintf(buffer,
+           bufferSize,
+           "DC%dA|DC%dV|AC%.2fA|AC%.2fV",
+           currentReading,
+           voltageReading,
+           currentPzem,
+           voltagePzem);
+}
+
+void udpSendDataTask(void* /*parameter*/) {
   for (;;) {
-      digitalWrite(LED_PIN, HIGH);
-      
-      readAndFormatData(bufferData, sizeof(bufferData));
-      udp.beginPacket(udpTargetIP, UDP_PORT);
-      udp.print(bufferData);
-      Serial.println(bufferData);
-      udp.endPacket();
-      memset(bufferData, 0, nBuffer);
-      digitalWrite(LED_PIN, LOW);
+    digitalWrite(kLedPin, HIGH);
 
-      vTaskDelay(pdMS_TO_TICKS(sendDelayMs));
+    readAndFormatData(gBufferData, sizeof(gBufferData));
+    gUdp.beginPacket(gUdpTargetIp, kUdpPort);
+    gUdp.print(gBufferData);
+    gUdp.endPacket();
+    Serial.println(gBufferData);
+
+    memset(gBufferData, 0, sizeof(gBufferData));
+    digitalWrite(kLedPin, LOW);
+    vTaskDelay(pdMS_TO_TICKS(kSendDelayMs));
   }
 }
 
-void mdnsTaskFunction(void * parameter) {
+void mdnsTaskFunction(void* /*parameter*/) {
   for (;;) {
-    unsigned long currentMillis = millis();
-    if (currentMillis - LAST_CONNECTION_CHECK > CONNECTION_CHECK_INTERVAL_MS) {
-        updateMDNS();
-        LAST_CONNECTION_CHECK = currentMillis;
+    const unsigned long now = millis();
+    if (now - gLastMdnsCheckMs > kMdnsCheckIntervalMs) {
+      updateMdns();
+      gLastMdnsCheckMs = now;
     }
-    vTaskDelay(pdMS_TO_TICKS(10)); // Add this line
+
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
+}  // namespace
 
-void setup() 
-{
+void setup() {
   Serial.begin(115200);
-  PZEM_SERIAL.begin(9600, SERIAL_8N1, PZEM_RX_PIN, PZEM_TX_PIN);
-  analogReadResolution(12); 
-  setupPin();
-  connectToWiFi(HOTSPOT_SSID,HOTSPOT_PASSWORD);
+  Serial2.begin(9600, SERIAL_8N1, kPzemRxPin, kPzemTxPin);
+  analogReadResolution(12);
+
+  setupPins();
+  connectToWiFi(kHotspotSsid, kHotspotPassword);
   setupHttpServer();
-  xTaskCreate(udpSendDataTask, "udpSendDataTask",10000, NULL, 2, &udpTask);
-  xTaskCreate(mdnsTaskFunction, "mdnsTaskFunction", 10000, NULL, 1, &mdnsTask);
+
+  xTaskCreate(udpSendDataTask, "udpSendDataTask", 10000, nullptr, 2, &gUdpTask);
+  xTaskCreate(mdnsTaskFunction, "mdnsTaskFunction", 10000, nullptr, 1, &gMdnsTask);
 }
 
-void loop() {
-
-}
+void loop() {}
