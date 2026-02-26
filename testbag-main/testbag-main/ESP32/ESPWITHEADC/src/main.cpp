@@ -3,83 +3,76 @@
 #include <Adafruit_ADS1X15.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <string.h>
-#include <HardwareSerial.h>
 #include <PZEM004Tv30.h>
 #include <ESPmDNS.h>
 #include <WebServer.h>
 
+namespace {
+constexpr uint8_t kLedPin = 2;
+constexpr uint8_t kChipSelectPin = 15;
 
-Adafruit_ADS1115 ads;
-#define LED 2
+// ADS1115 channels are 0..3.
+constexpr uint8_t kVoltageAdcChannel = 0;
+constexpr uint8_t kCurrentAdcChannel = 1;
+
+constexpr uint16_t kUdpPort = 8080;
+constexpr uint16_t kHttpPort = 80;
+constexpr uint32_t kStartDelayMs = 500;
+constexpr uint32_t kConnectionCheckIntervalMs = 10000;
+constexpr uint32_t kLoopDelayMs = 1000;
+constexpr uint8_t kMaxRetries = 5;
+
+constexpr float kAdsLsbVolts = 0.0001875f;
+
+Adafruit_ADS1115 gAds;
+WebServer gServer(kHttpPort);
+WiFiUDP gUdp;
 
 #if defined(ESP32)
-PZEM004Tv30 pzem(Serial2, 16, 17);
+PZEM004Tv30 gPzem(Serial2, 16, 17);
 #else
-PZEM004Tv30 pzem(Serial2);
+PZEM004Tv30 gPzem(Serial2);
 #endif
 
-const int updPort = 8080;
-const int httpPort = 80; 
+IPAddress gComputerIp;
+unsigned long gLastConnectionCheckMs = 0;
+int gSequenceNumber = 0;
 
-const int readingSpeed = 50 ;
-const int startDelay = 500;
+constexpr size_t kBufferSize = 100;
+char gBufferData[kBufferSize] = "ESP32";
 
-const int VOLTAGE_SENSOR_PIN = 32;
-const int CURRENT_SENSOR_PIN = 35;
-const int csPin = 15;
-
-WebServer server(httpPort);
-WiFiUDP udp;
-
-#define nBuffer 100
-char bufferData[nBuffer] = "ESP32";
-
-float voltagePzem ;
-float currentPzem ;
-float powerPzem;
-float energyPzem;  
-
-String voltageStringPzem ;
-String currentStringPzem ;
-String powerStringPzem ;
-String energyStringPzem ;
-
-IPAddress computerIP;
-
-unsigned long lastConnectionCheck = 0;
-unsigned long connectionCheckInterval = 10000;
-int sequenceNumber = 0;
-
-void connectToWiFi(const char* ssid , const char* password) {
+void connectToWiFi(const char* ssid, const char* password) {
   WiFi.begin(ssid, password);
+
   while (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(LED, HIGH);
-    delay(startDelay);
-    Serial.println(".\n");
-    digitalWrite(LED, LOW);
+    digitalWrite(kLedPin, HIGH);
+    delay(kStartDelayMs);
+    Serial.println(".");
+    digitalWrite(kLedPin, LOW);
   }
-  Serial.print("Connected to : ");
+
+  Serial.print("Connected to: ");
   Serial.println(WiFi.SSID());
-  Serial.println("IP Address : ");
+  Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
-  udp.begin(updPort);
+  gUdp.begin(kUdpPort);
 }
 
-void initMDNS(){
-  if(!MDNS.begin("ESP32")){
+void initMdns() {
+  if (!MDNS.begin("ESP32")) {
     Serial.println("Error starting mDNS");
     return;
   }
+
   Serial.println("mDNS started");
-  MDNS.addService("udp","tcp",updPort);
+  MDNS.addService("udp", "tcp", kUdpPort);
 }
 
-void handleWifiConfig(){
-  String ssid = server.arg("ssid");
-  String password = server.arg("password");
+void handleWifiConfig() {
+  const String ssid = gServer.arg("ssid");
+  const String password = gServer.arg("password");
 
-  server.send(200, "text/plain", "Wi-Fi credentials received.");
+  gServer.send(200, "text/plain", "Wi-Fi credentials received.");
   Serial.println("Received Wi-Fi credentials:");
   Serial.print("SSID: ");
   Serial.println(ssid);
@@ -89,109 +82,132 @@ void handleWifiConfig(){
   connectToWiFi(ssid.c_str(), password.c_str());
 }
 
-void setupHttpServer(){
-  server.on("/wifiConfig",handleWifiConfig);
-  server.begin();
+void setupHttpServer() {
+  gServer.on("/wifiConfig", handleWifiConfig);
+  gServer.begin();
 }
 
 void checkConnection() {
-  if (millis() - lastConnectionCheck > connectionCheckInterval) {
-    lastConnectionCheck = millis();
-    if (WiFi.status() != WL_CONNECTED) {
-      Serial.println("Disconnected. Attempting to reconnect...");
-      WiFi.beginSmartConfig();
-    }
+  const unsigned long now = millis();
+  if (now - gLastConnectionCheckMs <= kConnectionCheckIntervalMs) {
+    return;
   }
+
+  gLastConnectionCheckMs = now;
+  if (WiFi.status() == WL_CONNECTED) {
+    return;
+  }
+
+  Serial.println("Disconnected. Attempting to reconnect...");
+  WiFi.beginSmartConfig();
 }
+
+float sanitizePzemReading(float value, const char* errMessage) {
+  if (isnan(value)) {
+    Serial.println(errMessage);
+    return 0.0f;
+  }
+  return value;
+}
+
+void buildMeasurementPacket(char* buffer, size_t size) {
+  const int16_t voltageRaw = gAds.readADC_SingleEnded(kVoltageAdcChannel);
+  const int16_t currentRaw = gAds.readADC_SingleEnded(kCurrentAdcChannel);
+
+  const float voltageVolts = static_cast<float>(voltageRaw) * kAdsLsbVolts;
+  const float currentVolts = static_cast<float>(currentRaw) * kAdsLsbVolts;
+
+  const float voltagePzem = sanitizePzemReading(gPzem.voltage(), "Cannot read voltage from PZEM");
+  const float currentPzem = sanitizePzemReading(gPzem.current(), "Cannot read current from PZEM");
+
+  snprintf(buffer,
+           size,
+           "S%d|DC%dA|DC%dV|AC%.2fA|AC%.2fV",
+           gSequenceNumber,
+           currentRaw,
+           voltageRaw,
+           currentPzem,
+           voltagePzem);
+
+  Serial.printf("ADC volts: V=%.3fV I=%.3fV\n", voltageVolts, currentVolts);
+}
+
+bool waitForAck(int expectedSequence) {
+  int packetSize = gUdp.parsePacket();
+  if (packetSize <= 0) {
+    return false;
+  }
+
+  int len = gUdp.read(gBufferData, sizeof(gBufferData) - 1);
+  if (len <= 0) {
+    return false;
+  }
+
+  gBufferData[len] = '\0';
+  Serial.print("Received ACK from computer: ");
+  Serial.println(gBufferData);
+
+  if (strncmp(gBufferData, "ACK", 3) != 0) {
+    return false;
+  }
+
+  const int receivedSequence = atoi(gBufferData + 3);
+  return receivedSequence == expectedSequence;
+}
+
+bool sendPacketWithRetry(const char* payload) {
+  for (uint8_t retry = 0; retry < kMaxRetries; ++retry) {
+    digitalWrite(kLedPin, HIGH);
+    gUdp.beginPacket(gComputerIp, kUdpPort);
+    gUdp.print(payload);
+    gUdp.endPacket();
+    digitalWrite(kLedPin, LOW);
+
+    if (waitForAck(gSequenceNumber)) {
+      return true;
+    }
+
+    delay(kLoopDelayMs);
+  }
+
+  return false;
+}
+}  // namespace
 
 void setup() {
   Serial.begin(115200);
   SPI.begin();
   WiFi.beginSmartConfig();
-  ads.begin(0x48);
-  ads.setGain(GAIN_TWO);
-  ads.setDataRate(860);
-  pinMode(csPin, OUTPUT); // Set the CS pin as an output
-  digitalWrite(csPin, HIGH); // Set the CS pin high to deselect the ADS1115 module
+
+  gAds.begin(0x48);
+  gAds.setGain(GAIN_TWO);
+  gAds.setDataRate(860);
+
+  pinMode(kChipSelectPin, OUTPUT);
+  digitalWrite(kChipSelectPin, HIGH);
 
   WiFi.mode(WIFI_STA);
-
-  initMDNS();
+  initMdns();
   setupHttpServer();
 
-  pinMode(LED, OUTPUT);
+  pinMode(kLedPin, OUTPUT);
 }
 
 void loop() {
-  server.handleClient();
+  gServer.handleClient();
+  checkConnection();
 
-  int16_t voltage = ads.readADC_SingleEnded(VOLTAGE_SENSOR_PIN);
-  float voltage_volts = voltage * 0.0001875;  // convert to volts
+  buildMeasurementPacket(gBufferData, sizeof(gBufferData));
+  Serial.println(gBufferData);
 
-  int16_t current = ads.readADC_SingleEnded(CURRENT_SENSOR_PIN);
-  float current_volts = current * 0.0001875;
-
-  voltagePzem = pzem.voltage();
-  currentPzem = pzem.current();
-
-  if(isnan(voltagePzem)){ 
-    voltagePzem = 0 ;
-    Serial.println("Cannot Read Voltage from PZEM");
-    } 
-  if(isnan(currentPzem)) { 
-    currentPzem = 0 ;
-    Serial.println("Cannot Read Current from PZEM");
-    } 
-  String currentString = String(current);
-  String voltageString = String(voltage);
-  voltageStringPzem = String(voltagePzem);
-  currentStringPzem = String(currentPzem);
-
-  // - - - - - - SEND DATA TO COMPUTER - - - - - - - //
-   sprintf(bufferData, "S%d|DC%sA|DC%sV|AC%sA|AC%sV",
-    sequenceNumber,currentString.c_str(), voltageString.c_str(), currentStringPzem.c_str(), voltageStringPzem.c_str());
-  Serial.println(bufferData);
-
-  checkConnection(); // Check and maintain Wi-Fi connection
-
-  // First
-  digitalWrite(LED,HIGH);
-  udp.beginPacket(computerIP,updPort);
-  udp.print(bufferData);
-  udp.endPacket();
-  memset(bufferData,0,nBuffer);
-  digitalWrite(LED,LOW);
-
-  // Again
-  bool success = false;
-  for (int i = 0; i < 5; i++) {
-    digitalWrite(LED, HIGH);
-    udp.beginPacket(computerIP, updPort);
-    udp.print(bufferData);
-    udp.endPacket();
-    digitalWrite(LED, LOW);
-
-    memset(bufferData, 0, nBuffer);
-    int packetSize = udp.parsePacket();
-    if (packetSize > 0) {
-      int len = udp.read(bufferData, sizeof(bufferData));
-      if (len > 0) {
-        bufferData[len] = '\0';
-        Serial.print("Received ACK from computer: ");
-        Serial.println(bufferData);
-        if (strncmp(bufferData, "ACK", 3) == 0) {
-          int receivedSeqNum = atoi(bufferData + 3);
-          if (receivedSeqNum == sequenceNumber) {
-            success = true;
-            break;
-          }
-        }
-      }
-    }
-    delay(1000);
+  const bool delivered = sendPacketWithRetry(gBufferData);
+  if (delivered) {
+    Serial.println("Packet successfully delivered.");
+  } else {
+    Serial.println("Error: Packet not acknowledged.");
   }
-  if (success) { Serial.println("Packet successfully delivered."); }
-  else { Serial.println("Error: Packet not acknowledged."); }
-  sequenceNumber++;
-  delay(1000);
+
+  ++gSequenceNumber;
+  memset(gBufferData, 0, sizeof(gBufferData));
+  delay(kLoopDelayMs);
 }
