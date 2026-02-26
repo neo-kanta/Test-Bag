@@ -3,22 +3,24 @@ using System.Collections.Generic;
 
 namespace TESTBAG
 {
-    public class Calculation
+    public static class Calculation
     {
         public static double DerivativeVoltage(double currentVoltage, double previousVoltage, double currentTime, double previousTime)
         {
-            if (Math.Abs(currentTime - previousTime) < double.Epsilon)
+            var timeDifference = currentTime - previousTime;
+            if (Math.Abs(timeDifference) < double.Epsilon)
             {
                 return 0;
             }
 
-            double timeDifference = currentTime - previousTime;
-            double voltageDifference = currentVoltage - previousVoltage;
-            double derivative = voltageDifference / timeDifference;
-            return derivative;
+            var voltageDifference = currentVoltage - previousVoltage;
+            return voltageDifference / timeDifference;
         }
-        public static double CalculateWeightedMovingAverage(List<double> values, List<double> weights)
+
+        public static double CalculateWeightedMovingAverage(IReadOnlyList<double> values, IReadOnlyList<double> weights)
         {
+            if (values == null) throw new ArgumentNullException(nameof(values));
+            if (weights == null) throw new ArgumentNullException(nameof(weights));
             if (values.Count != weights.Count)
             {
                 throw new ArgumentException("Values and weights lists must have the same number of elements.");
@@ -26,19 +28,29 @@ namespace TESTBAG
 
             double weightedSum = 0;
             double weightSum = 0;
-
-            for (int i = 0; i < values.Count; i++)
+            for (var i = 0; i < values.Count; i++)
             {
                 weightedSum += values[i] * weights[i];
                 weightSum += weights[i];
             }
 
-            double weightedMovingAverage = weightedSum / weightSum;
-            return weightedMovingAverage;
+            if (Math.Abs(weightSum) < double.Epsilon)
+            {
+                throw new DivideByZeroException("The sum of weights must not be zero.");
+            }
+
+            return weightedSum / weightSum;
         }
+
         public static double CalculateStateOfCharge(double voltage, double minVoltage, double maxVoltage)
         {
-            return (voltage - minVoltage) / (maxVoltage - minVoltage);
+            var range = maxVoltage - minVoltage;
+            if (Math.Abs(range) < double.Epsilon)
+            {
+                return 0;
+            }
+
+            return (voltage - minVoltage) / range;
         }
 
         public static double CalculateCapacity(double current, double time)

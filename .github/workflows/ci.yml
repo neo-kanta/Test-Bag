@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Build baseline
+        run: |
+          dotnet build libs/core/Core.csproj
+          dotnet build libs/transport/Transport.csproj
+          dotnet build apps/pc-cli/PcApp.csproj
+          dotnet build simulators/device-simulator/DeviceSimulator.csproj
+      - name: Test
+        run: |
+          dotnet test tests/unit/Core.UnitTests/Core.UnitTests.csproj --logger "trx;LogFileName=core.trx"
+          dotnet test tests/integration/Transport.IntegrationTests/Transport.IntegrationTests.csproj --logger "trx;LogFileName=transport.trx"
+          dotnet test tests/e2e/E2E.DesktopTests/E2E.DesktopTests.csproj --logger "trx;LogFileName=e2e.trx"
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/*.trx'
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PlatformIO
+        run: pip install platformio
+      - name: Build firmware
+        run: |
+          platformio run -d firmware/arduino-ac
+          platformio run -d firmware/esp32/espwifi
+          platformio run -d firmware/esp32/espwitheadc
+
+  pcb:
+    runs-on: ubuntu-latest
+    if: ${{ vars.ENABLE_PCB_CHECKS == 'true' || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PCB (optional)
+        run: bash tools/kicad/validate.sh hardware/pcb/testbag-main-board/kicad
+      - name: Export manufacturing outputs (optional)
+        run: bash tools/kicad/export.sh hardware/pcb/testbag-main-board
