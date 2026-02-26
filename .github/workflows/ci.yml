@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  dotnet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore/build
+        run: |
+          dotnet build src/Core/Core.csproj
+          dotnet build src/Transport/Transport.csproj
+          dotnet build src/PcApp/PcApp.csproj
+          dotnet build src/DeviceSimulator/DeviceSimulator.csproj
+      - name: Test
+        run: |
+          dotnet test tests/Core.UnitTests/Core.UnitTests.csproj --logger "trx;LogFileName=core.trx"
+          dotnet test tests/Transport.IntegrationTests/Transport.IntegrationTests.csproj --logger "trx;LogFileName=transport.trx"
+          dotnet test tests/E2E.DesktopTests/E2E.DesktopTests.csproj --logger "trx;LogFileName=e2e.trx"
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/*.trx'
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PlatformIO
+        run: pip install platformio
+      - name: Build firmware
+        run: |
+          platformio run -d testbag-main/testbag-main/ArduinoAC
+          platformio run -d testbag-main/testbag-main/ESP32/ESPWIFI
+          platformio run -d testbag-main/testbag-main/ESP32/ESPWITHEADC
